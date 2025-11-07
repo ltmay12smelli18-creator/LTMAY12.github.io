@@ -1,258 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ages</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    h1 { margin-bottom: 20px; }
-    .variable-card {
-      background: var(--card-bg);
-      color: var(--text-color);
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      width: 320px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-    .controls { display: flex; gap: 10px; align-items: center; }
-    input, select, button { padding: 6px 10px; font-size: 1rem; }
-    .buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; justify-content: center; }
-    .small { width: 80px; }
-
-    /* Toggle switch styling (iOS style) */
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 28px;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 34px;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 20px; width: 20px;
-      left: 4px; bottom: 4px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-    input:checked + .slider {
-      background-color: #2196F3;
-    }
-    input:checked + .slider:before {
-      transform: translateX(22px);
-    }
-
-    :root {
-      --bg-color: #f4f4f4;
-      --text-color: #000;
-      --card-bg: #fff;
-    }
-
-    body.dark {
-      --bg-color: #1e1e1e;
-      --text-color: #e0e0e0;
-      --card-bg: #2a2a2a;
-    }
-
-    body { background-color: var(--bg-color); color: var(--text-color); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ages</title>
+<style>
+  :root{
+    --bg-light:#f4f4f4;--text-light:#000;--card-light:#fff;
+    --bg-dark:#1e1e1e;--text-dark:#e0e0e0;--card-dark:#2a2a2a;
+    --blue:#2196F3;
+  }
+  body{
+    font-family:Arial,sans-serif;display:flex;flex-direction:column;align-items:center;
+    padding:20px;transition:background-color .3s,color .3s;
+    background-color:var(--bg-light);color:var(--text-light);
+  }
+  body.dark{background-color:var(--bg-dark);color:var(--text-dark);}
+  .logo{width:220px;margin-bottom:10px;border-radius:10px;}
+  h1{margin:6px 0 14px 0;}
+  .top{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px;}
+  .card{
+    width:340px;max-width:92vw;background:var(--card-light);
+    padding:14px;margin-bottom:12px;border-radius:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,.1);
+    display:flex;flex-direction:column;gap:8px;
+    transition:background-color .3s;
+  }
+  body.dark .card{background:var(--card-dark);}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  button,select,input{padding:5px 8px;font-size:0.95rem;}
+  .small{width:95px;}
+  .switch{position:relative;display:inline-block;width:46px;height:24px;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#ccc;transition:.3s;border-radius:34px;}
+  .slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s;}
+  .switch input:checked+.slider{background:var(--blue);}
+  .switch input:checked+.slider:before{transform:translateX(22px);}
+  .muted{font-size:.85rem;color:gray;}
+</style>
 </head>
 <body>
+  <img src="file:///C|/Users/Owner/Downloads/Ages Logo.png" alt="Ages Logo" class="logo">
   <h1>Ages</h1>
-  <div id="variables"></div>
-
-  <div class="buttons">
+  <div class="top">
     <button id="addVar">+ Add Variable</button>
-    <button id="updateValues">Update Values</button>
     <button id="addRotation">Add Rotation</button>
-    <button id="resetSave">Reset Save</button>
+    <button id="reset">Reset Save</button>
     <button id="toggleTheme">Toggle Theme</button>
   </div>
+  <div id="vars"></div>
 
-  <script>
-    const container = document.getElementById('variables');
-    const addBtn = document.getElementById('addVar');
-    const updateBtn = document.getElementById('updateValues');
-    const rotationBtn = document.getElementById('addRotation');
-    const resetBtn = document.getElementById('resetSave');
-    const toggleThemeBtn = document.getElementById('toggleTheme');
+<script>
+const varsBox=document.getElementById('vars');
+const addVarBtn=document.getElementById('addVar');
+const addRotationBtn=document.getElementById('addRotation');
+const resetBtn=document.getElementById('reset');
+const toggleThemeBtn=document.getElementById('toggleTheme');
+let variables=[];
+const STORAGE='agesVarsFinalZ',THEME='agesThemeFinalZ';
 
-    let variables = [];
+function num(x){return isFinite(x)?Number(x):0;}
+function fmt(x){return (Math.round(num(x)*100)/100).toString();}
+function save(){localStorage.setItem(STORAGE,JSON.stringify(variables));}
+function load(){
+  const s=localStorage.getItem(STORAGE);
+  if(s){try{variables=JSON.parse(s);}catch{variables=[];}}
+  if(localStorage.getItem(THEME)==='dark')document.body.classList.add('dark');
+  render();
+}
 
-    // Load saved data + theme
-    window.onload = () => {
-      const saved = localStorage.getItem('agesVariables');
-      const savedTheme = localStorage.getItem('agesTheme');
-      if (saved) {
-        try { variables = JSON.parse(saved); } catch { variables = []; }
-      }
-      if (savedTheme === 'dark') document.body.classList.add('dark');
-      render();
-    };
+function render(){
+  varsBox.innerHTML='';
+  variables.forEach((v,i)=>{
+    const c=document.createElement('div');c.className='card';
+    const r1=document.createElement('div');r1.className='row';
+    const name=document.createElement('input');name.type='text';name.value=v.name;
+    name.oninput=e=>{v.name=e.target.value;save();};
+    const dup=document.createElement('button');dup.textContent='Duplicate';dup.className='small';
+    dup.onclick=()=>{const copy=JSON.parse(JSON.stringify(v));copy.name+='_copy';variables.splice(i+1,0,copy);save();render();};
+    const rem=document.createElement('button');rem.textContent='Remove';rem.className='small';
+    rem.onclick=()=>{variables.splice(i,1);save();render();};
+    r1.append(name,dup,rem);
 
-    function saveData() {
-      localStorage.setItem('agesVariables', JSON.stringify(variables));
-    }
+    const r2=document.createElement('div');r2.className='row';
+    const totalDiv=document.createElement('div');
+    totalDiv.innerHTML=`<strong>Total:</strong> ${fmt(v.total)}`;
+    const modDiv=document.createElement('div');
+    modDiv.innerHTML=`<strong>Modifier / per-rotation:</strong> ${fmt(v.amount)}`;
+    r2.append(totalDiv,modDiv);
 
-    function saveTheme() {
-      localStorage.setItem('agesTheme', document.body.classList.contains('dark') ? 'dark' : 'light');
-    }
+    // modifier row
+    const r3=document.createElement('div');r3.className='row';
+    const op=document.createElement('select');
+    ['+','-','*','/','set'].forEach(x=>{
+      const o=document.createElement('option');o.value=x;o.textContent=(x==='set'?'Set':x);
+      if(v.tempOp===x)o.selected=true;op.append(o);
+    });
+    op.onchange=e=>{v.tempOp=e.target.value;save();};
+    const modVal=document.createElement('input');
+    modVal.type='number';modVal.placeholder='number for modifier';modVal.value=v.tempVal||'';
+    modVal.oninput=e=>{v.tempVal=parseFloat(e.target.value)||0;};
+    const updateBtn=document.createElement('button');
+    updateBtn.textContent='Update Modifier';updateBtn.className='small';
+    updateBtn.onclick=()=>{updateModifier(i);};
+    r3.append(op,modVal,updateBtn);
 
-    function render() {
-      container.innerHTML = '';
-      variables.forEach((v, i) => {
-        const card = document.createElement('div');
-        card.className = 'variable-card';
+    // amount row
+    const r4=document.createElement('div');r4.className='row';
+    const addOp=document.createElement('select');
+    ['+','-','*','/','set'].forEach(x=>{
+      const o=document.createElement('option');o.value=x;o.textContent=(x==='set'?'Set':x);
+      if(v.addOp===x)o.selected=true;addOp.append(o);
+    });
+    addOp.onchange=e=>{v.addOp=e.target.value;save();};
+    const amt=document.createElement('input');
+    amt.type='number';amt.placeholder='amount';amt.value=v.amount||'';
+    amt.oninput=e=>{v.amount=parseFloat(e.target.value)||0;};
+    const applyBtn=document.createElement('button');
+    applyBtn.textContent='Apply to Total';applyBtn.className='small';
+    applyBtn.onclick=()=>{applyToTotal(i);};
+    r4.append(addOp,amt,applyBtn);
 
-        const nameInput = document.createElement('input');
-        nameInput.value = v.name;
-        nameInput.placeholder = 'Variable Name';
-        nameInput.oninput = e => { v.name = e.target.value; saveData(); };
+    // auto-add toggle
+    const r5=document.createElement('div');r5.className='row';
+    const toggleLabel=document.createElement('label');toggleLabel.className='switch';
+    const toggleIn=document.createElement('input');toggleIn.type='checkbox';toggleIn.checked=v.autoAdd||false;
+    const slider=document.createElement('span');slider.className='slider';
+    toggleIn.onchange=e=>{v.autoAdd=e.target.checked;save();};
+    toggleLabel.append(toggleIn,slider);
+    const span=document.createElement('span');
+    span.innerHTML=`Auto-Add Last Rotation <span class="muted">Last rotation total: ${fmt(v.last)}</span>`;
+    r5.append(toggleLabel,span);
 
-        const valueInput = document.createElement('input');
-        valueInput.type = 'number';
-        valueInput.value = v.value;
-        valueInput.placeholder = 'Variable Value';
-        valueInput.oninput = e => { v.value = parseFloat(e.target.value) || 0; saveData(); };
+    const r6=document.createElement('div');r6.className='muted';
+    r6.textContent="Per-variable Update Modifier changes the 'amount' box. Apply to Total adds that amount. Add Rotation commits modifiers to totals.";
 
-        const operationSelect = document.createElement('select');
-        ['+', '-', '*', '/'].forEach(op => {
-          const opt = document.createElement('option');
-          opt.value = op;
-          opt.textContent = op;
-          if (v.operation === op) opt.selected = true;
-          operationSelect.appendChild(opt);
-        });
-        operationSelect.onchange = e => { v.operation = e.target.value; saveData(); };
+    c.append(r1,r2,r3,r4,r5,r6);
+    varsBox.append(c);
+  });
+  save();
+}
 
-        const inputBox = document.createElement('input');
-        inputBox.type = 'number';
-        inputBox.value = v.input;
-        inputBox.placeholder = 'Enter number';
-        inputBox.oninput = e => v.input = parseFloat(e.target.value) || 0;
+function addVar(){
+  variables.push({name:`Variable${variables.length+1}`,total:0,amount:0,tempOp:'+',tempVal:0,addOp:'+',autoAdd:false,last:0});
+  save();render();
+}
 
-        const display = document.createElement('p');
-        display.textContent = `Value: ${v.value}`;
+function updateModifier(i){
+  const v=variables[i];
+  const op=v.tempOp||'+';
+  const x=num(v.tempVal);
+  let a=num(v.amount);
+  if(op==='set'){a=x;}
+  else if(op==='+'){a+=x;}
+  else if(op==='-'){a-=x;}
+  else if(op==='*'){a*=x;}
+  else if(op==='/'){if(x!==0)a/=x;}
+  v.amount=a;
+  v.tempVal=0;
+  save();render();
+}
 
-        const autoAddLabel = document.createElement('label');
-        autoAddLabel.className = 'switch';
-        const autoAddInput = document.createElement('input');
-        autoAddInput.type = 'checkbox';
-        autoAddInput.checked = v.autoAdd || false;
-        const autoAddSlider = document.createElement('span');
-        autoAddSlider.className = 'slider';
-        autoAddInput.onchange = e => {
-          v.autoAdd = e.target.checked;
-          saveData();
-        };
-        autoAddLabel.append(autoAddInput, autoAddSlider);
+function applyToTotal(i){
+  const v=variables[i];
+  v.total+=num(v.amount);
+  v.last=v.total;
+  save();render();
+}
 
-        const toggleText = document.createElement('span');
-        toggleText.textContent = 'Auto-Add Prev.';
-        toggleText.style.fontSize = '0.9rem';
-        toggleText.style.marginLeft = '6px';
+function addRotation(){
+  variables=variables.map(v=>{
+    let total=v.total+num(v.amount);
+    if(v.autoAdd)total+=num(v.last);
+    v.last=total;v.total=total;
+    return v;
+  });
+  save();render();
+}
 
-        const toggleContainer = document.createElement('div');
-        toggleContainer.style.display = 'flex';
-        toggleContainer.style.alignItems = 'center';
-        toggleContainer.append(autoAddLabel, toggleText);
+function resetAll(){
+  if(confirm('Reset all saved data?')){variables=[];localStorage.removeItem(STORAGE);render();}
+}
 
-        const controls = document.createElement('div');
-        controls.className = 'controls';
-        controls.append(operationSelect, inputBox);
-
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = 'Remove';
-        removeBtn.className = 'small';
-        removeBtn.onclick = () => {
-          variables.splice(i, 1);
-          saveData();
-          render();
-        };
-
-        card.append(nameInput, valueInput, controls, toggleContainer, display, removeBtn);
-        container.appendChild(card);
-      });
-      saveData();
-    }
-
-    addBtn.onclick = () => {
-      variables.push({ name: `Variable${variables.length + 1}`, value: 0, operation: '+', input: 0, previousValue: 0, autoAdd: false });
-      render();
-    };
-
-    updateBtn.onclick = () => {
-      variables = variables.map(v => {
-        let newValue = parseFloat(v.value) || 0;
-        const input = parseFloat(v.input) || 0;
-        switch (v.operation) {
-          case '+': newValue += input; break;
-          case '-': newValue -= input; break;
-          case '*': newValue *= input; break;
-          case '/': if (input !== 0) newValue /= input; break;
-        }
-        return { ...v, value: newValue, input: 0 };
-      });
-      render();
-    };
-
-    rotationBtn.onclick = () => {
-      variables = variables.map(v => {
-        const oldValue = parseFloat(v.value) || 0;
-        const input = parseFloat(v.input) || 0;
-        let newValue = oldValue;
-        switch (v.operation) {
-          case '+': newValue += input; break;
-          case '-': newValue -= input; break;
-          case '*': newValue *= input; break;
-          case '/': if (input !== 0) newValue /= input; break;
-        }
-        if (v.autoAdd && v.previousValue !== undefined) {
-          newValue += parseFloat(v.previousValue || 0);
-        }
-        return { ...v, previousValue: oldValue, value: newValue, input: 0 };
-      });
-      render();
-    };
-
-    resetBtn.onclick = () => {
-      if (confirm('Are you sure you want to reset all saved data?')) {
-        localStorage.removeItem('agesVariables');
-        variables = [];
-        render();
-      }
-    };
-
-    toggleThemeBtn.onclick = () => {
-      document.body.classList.toggle('dark');
-      saveTheme();
-    };
-  </script>
+addVarBtn.onclick=addVar;
+addRotationBtn.onclick=addRotation;
+resetBtn.onclick=resetAll;
+toggleThemeBtn.onclick=()=>{
+  document.body.classList.toggle('dark');
+  localStorage.setItem(THEME,document.body.classList.contains('dark')?'dark':'light');
+};
+load();
+</script>
 </body>
 </html>
