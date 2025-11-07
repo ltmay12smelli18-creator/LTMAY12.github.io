@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ages</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    h1 { margin-bottom: 20px; }
+    .variable-card {
+      background: var(--card-bg);
+      color: var(--text-color);
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .controls { display: flex; gap: 10px; align-items: center; }
+    input, select, button { padding: 6px 10px; font-size: 1rem; }
+    .buttons { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; justify-content: center; }
+    .small { width: 80px; }
+
+    /* Toggle switch styling (iOS style) */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 28px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px; width: 20px;
+      left: 4px; bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
+    :root {
+      --bg-color: #f4f4f4;
+      --text-color: #000;
+      --card-bg: #fff;
+    }
+
+    body.dark {
+      --bg-color: #1e1e1e;
+      --text-color: #e0e0e0;
+      --card-bg: #2a2a2a;
+    }
+
+    body { background-color: var(--bg-color); color: var(--text-color); }
+  </style>
+</head>
+<body>
+  <h1>Ages</h1>
+  <div id="variables"></div>
+
+  <div class="buttons">
+    <button id="addVar">+ Add Variable</button>
+    <button id="updateValues">Update Values</button>
+    <button id="addRotation">Add Rotation</button>
+    <button id="resetSave">Reset Save</button>
+    <button id="toggleTheme">Toggle Theme</button>
+  </div>
+
+  <script>
+    const container = document.getElementById('variables');
+    const addBtn = document.getElementById('addVar');
+    const updateBtn = document.getElementById('updateValues');
+    const rotationBtn = document.getElementById('addRotation');
+    const resetBtn = document.getElementById('resetSave');
+    const toggleThemeBtn = document.getElementById('toggleTheme');
+
+    let variables = [];
+
+    // Load saved data + theme
+    window.onload = () => {
+      const saved = localStorage.getItem('agesVariables');
+      const savedTheme = localStorage.getItem('agesTheme');
+      if (saved) {
+        try { variables = JSON.parse(saved); } catch { variables = []; }
+      }
+      if (savedTheme === 'dark') document.body.classList.add('dark');
+      render();
+    };
+
+    function saveData() {
+      localStorage.setItem('agesVariables', JSON.stringify(variables));
+    }
+
+    function saveTheme() {
+      localStorage.setItem('agesTheme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    }
+
+    function render() {
+      container.innerHTML = '';
+      variables.forEach((v, i) => {
+        const card = document.createElement('div');
+        card.className = 'variable-card';
+
+        const nameInput = document.createElement('input');
+        nameInput.value = v.name;
+        nameInput.placeholder = 'Variable Name';
+        nameInput.oninput = e => { v.name = e.target.value; saveData(); };
+
+        const valueInput = document.createElement('input');
+        valueInput.type = 'number';
+        valueInput.value = v.value;
+        valueInput.placeholder = 'Variable Value';
+        valueInput.oninput = e => { v.value = parseFloat(e.target.value) || 0; saveData(); };
+
+        const operationSelect = document.createElement('select');
+        ['+', '-', '*', '/'].forEach(op => {
+          const opt = document.createElement('option');
+          opt.value = op;
+          opt.textContent = op;
+          if (v.operation === op) opt.selected = true;
+          operationSelect.appendChild(opt);
+        });
+        operationSelect.onchange = e => { v.operation = e.target.value; saveData(); };
+
+        const inputBox = document.createElement('input');
+        inputBox.type = 'number';
+        inputBox.value = v.input;
+        inputBox.placeholder = 'Enter number';
+        inputBox.oninput = e => v.input = parseFloat(e.target.value) || 0;
+
+        const display = document.createElement('p');
+        display.textContent = `Value: ${v.value}`;
+
+        const autoAddLabel = document.createElement('label');
+        autoAddLabel.className = 'switch';
+        const autoAddInput = document.createElement('input');
+        autoAddInput.type = 'checkbox';
+        autoAddInput.checked = v.autoAdd || false;
+        const autoAddSlider = document.createElement('span');
+        autoAddSlider.className = 'slider';
+        autoAddInput.onchange = e => {
+          v.autoAdd = e.target.checked;
+          saveData();
+        };
+        autoAddLabel.append(autoAddInput, autoAddSlider);
+
+        const toggleText = document.createElement('span');
+        toggleText.textContent = 'Auto-Add Prev.';
+        toggleText.style.fontSize = '0.9rem';
+        toggleText.style.marginLeft = '6px';
+
+        const toggleContainer = document.createElement('div');
+        toggleContainer.style.display = 'flex';
+        toggleContainer.style.alignItems = 'center';
+        toggleContainer.append(autoAddLabel, toggleText);
+
+        const controls = document.createElement('div');
+        controls.className = 'controls';
+        controls.append(operationSelect, inputBox);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = 'Remove';
+        removeBtn.className = 'small';
+        removeBtn.onclick = () => {
+          variables.splice(i, 1);
+          saveData();
+          render();
+        };
+
+        card.append(nameInput, valueInput, controls, toggleContainer, display, removeBtn);
+        container.appendChild(card);
+      });
+      saveData();
+    }
+
+    addBtn.onclick = () => {
+      variables.push({ name: `Variable${variables.length + 1}`, value: 0, operation: '+', input: 0, previousValue: 0, autoAdd: false });
+      render();
+    };
+
+    updateBtn.onclick = () => {
+      variables = variables.map(v => {
+        let newValue = parseFloat(v.value) || 0;
+        const input = parseFloat(v.input) || 0;
+        switch (v.operation) {
+          case '+': newValue += input; break;
+          case '-': newValue -= input; break;
+          case '*': newValue *= input; break;
+          case '/': if (input !== 0) newValue /= input; break;
+        }
+        return { ...v, value: newValue, input: 0 };
+      });
+      render();
+    };
+
+    rotationBtn.onclick = () => {
+      variables = variables.map(v => {
+        const oldValue = parseFloat(v.value) || 0;
+        const input = parseFloat(v.input) || 0;
+        let newValue = oldValue;
+        switch (v.operation) {
+          case '+': newValue += input; break;
+          case '-': newValue -= input; break;
+          case '*': newValue *= input; break;
+          case '/': if (input !== 0) newValue /= input; break;
+        }
+        if (v.autoAdd && v.previousValue !== undefined) {
+          newValue += parseFloat(v.previousValue || 0);
+        }
+        return { ...v, previousValue: oldValue, value: newValue, input: 0 };
+      });
+      render();
+    };
+
+    resetBtn.onclick = () => {
+      if (confirm('Are you sure you want to reset all saved data?')) {
+        localStorage.removeItem('agesVariables');
+        variables = [];
+        render();
+      }
+    };
+
+    toggleThemeBtn.onclick = () => {
+      document.body.classList.toggle('dark');
+      saveTheme();
+    };
+  </script>
+</body>
+</html>
